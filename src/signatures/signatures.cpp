@@ -27,7 +27,7 @@ MODULEINFO GetModuleInfo(const std::string& szModule)
 
 const MODULEINFO& GetPd2ModuleInfo()
 {
-	static const MODULEINFO modinfo = GetModuleInfo("payday2_win32_release.exe");
+	static const MODULEINFO modinfo = GetModuleInfo("payday_win32_release.exe");
 	return modinfo;
 }
 
@@ -57,14 +57,14 @@ const char *FindPattern(const char *pattern, const char *mask)
 
 bool FindUnassignedSignaturesPredicate(const SignatureF& s)
 {
-	return *s.address == nullptr;
+	return s.address == nullptr;
 }
 
 std::vector<SignatureF> allSignatures;
 }
 
-SignatureSearch::SignatureSearch(const void** adress, const char* signature, const char* mask, int offset){
-	SignatureF ins = { signature, mask, offset, adress };
+SignatureSearch::SignatureSearch(const char* id, void* address, const char* signature, const char* mask, int offset, int known_address){
+	SignatureF ins = { signature, mask, offset, address, id, known_address };
 	allSignatures.push_back(ins);
 }
 
@@ -72,21 +72,18 @@ void SignatureSearch::Search(){
 	PD2HOOK_TRACE_FUNC;
 	PD2HOOK_LOG_LOG("Scanning for signatures.");
 
-	std::for_each(allSignatures.begin(), allSignatures.end(), [](SignatureF& s) { *s.address = FindPattern(s.signature, s.mask) + s.offset; });
+	std::vector<SignatureF>::iterator it;
+	for (it = allSignatures.begin(); it < allSignatures.end(); it++){
+		std::string someString(it->id);
 
-	const auto end = allSignatures.cend();
-	auto it = std::find_if(allSignatures.cbegin(), end, FindUnassignedSignaturesPredicate);
-	int unassigned_count = 0;
-	while (it != end)
-	{
-		++unassigned_count;
-		PD2HOOK_LOG_WARN("Didn't find signature with pattern: " << it->signature << ", and mask: " << it->mask);
-		it = std::find_if(it, end, FindUnassignedSignaturesPredicate);
-	}
-	
-	if (unassigned_count)
-	{
-		PD2HOOK_LOG_WARN("Total: " << unassigned_count << " signatures not found.");
+		if (it->known_address)
+		{
+			*((void**)it->address) = (void*)(it->known_address);
+		}
+		else
+		{
+			*((void**)it->address) = (void*)(FindPattern(it->signature, it->mask) + it->offset);
+		}
 	}
 
 	PD2HOOK_LOG_LOG("Signatures Found.");

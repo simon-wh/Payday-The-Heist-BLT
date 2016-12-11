@@ -117,22 +117,22 @@ struct LuaCaller<Ret, StackAdjust, Args...>
 
  If the hooked functions are found differently in the future (perhaps not requiring stack adjustments?) then the LuaCaller can be changed accordingly.
 */
-#define CREATE_CALLABLE_SIGNATURE(name, retn, signature, mask, offset, ...) \
+#define CREATE_CALLABLE_SIGNATURE(id, name, retn, signature, mask, offset, known_address, ...) \
 	typedef retn(__fastcall *name ## ptr)(__VA_ARGS__); \
 	name ## ptr name ## ptr_val = nullptr; \
 	template<typename... Args> retn name ## impl(Args... args) { return pd2hook::LuaCaller<retn, pd2hook::StackCleanSize<name ## ptr>::stackcleansize::value, __VA_ARGS__>::call( name ## ptr_val, args... ); } \
 	typedef retn(*name ## actual)(__VA_ARGS__); name ## actual name = &name ## impl; \
-	pd2hook::SignatureSearch name ## search(const_cast<const void **>(reinterpret_cast<void **>(&name ## ptr_val)), signature, mask, offset);
+	pd2hook::SignatureSearch name ## search(id, const_cast<const void **>(reinterpret_cast<void **>(&name ## ptr_val)), signature, mask, offset, known_address);
 
-#define CREATE_NORMAL_CALLABLE_SIGNATURE(name, retn, signature, mask, offset, ...) \
+#define CREATE_NORMAL_CALLABLE_SIGNATURE(id, name, retn, signature, mask, offset, known_address, ...) \
 	typedef retn(*name ## ptr)(__VA_ARGS__); \
 	name ## ptr name = NULL; \
-	pd2hook::SignatureSearch name ## search(&name, signature, mask, offset);
+	pd2hook::SignatureSearch name ## search(id, &name, signature, mask, offset, known_address);
 
-#define CREATE_CALLABLE_CLASS_SIGNATURE(name, retn, signature, mask, offset, ...) \
+#define CREATE_CALLABLE_CLASS_SIGNATURE(id, name, retn, signature, mask, offset, known_address, ...) \
 	typedef retn(__thiscall *name ## ptr)(void*, __VA_ARGS__); \
 	name ## ptr name = NULL; \
-	pd2hook::SignatureSearch name ## search(const_cast<const void **>(reinterpret_cast<void **>(&name)), signature, mask, offset);
+	pd2hook::SignatureSearch name ## search(id, const_cast<const void **>(reinterpret_cast<void **>(&name)), signature, mask, offset, known_address);
 
 #define CREATE_LUA_FUNCTION(lua_func, name) \
 	lua_pushcclosure(L, lua_func, 0); \
@@ -144,12 +144,14 @@ struct SignatureF {
 	const char* signature;
 	const char* mask;
 	int offset;
-	const void** address;
+	void* address;
+	const char* id;
+	int known_address;
 };
 
 class SignatureSearch {
 public:
-	SignatureSearch(const void** address, const char* signature, const char* mask, int offset);
+	SignatureSearch(const char* id, void* address, const char* signature, const char* mask, int offset, int known_address);
 	static void Search();
 };
 
