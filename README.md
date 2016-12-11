@@ -1,5 +1,8 @@
-# Payday 2 BLT
-An open source Lua hook for Payday 2, designed and created for ease of use for both players and modders.  
+# Payday: The Heist BLT
+
+A fork of PAYDAY 2 BLT designed to run on PD:TH
+
+An open source Lua hook for Payday: The Heist, designed and created for ease of use for both players and modders.  
 This is the developer repository, and should only be used if you know what you're doing. If you don't, visit the website at [PaydayMods.com](http://paydaymods.com/) to get an up-to-date drag-drop install.  
 
 ## Download
